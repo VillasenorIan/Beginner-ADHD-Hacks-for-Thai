@@ -24,9 +24,14 @@
         const { useState, useEffect } = React;
 
         // ==========================================
+        // 🚨 YOUR DATABASE WEB APP URL GOES HERE 🚨
+        // ==========================================
+        const WEB_APP_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE"; 
+
+        // ==========================================
         // DATA LOGISTICS: THE MASTER INDEX & MODULES
         // ==========================================
-        
+        // 🚨 DELETE EVERYTHING INSIDE 'DATABASE' AND PASTE YOUR GENERATED JSON HERE 🚨
         const DATABASE = {
             temporal_logistics: {
                 title: "Temporal Logistics (Dates & Time)",
@@ -109,151 +114,6 @@
                                 ]
                             }
                         ]
-                    },
-                    months: {
-                        title: "Months of the Year (30/31 Algorithm)",
-                        description: "Months ending in -khom (คม) have 31 days. Months ending in -yon (ยน) have 30. -phan is Feb.",
-                        cards: [
-                            {
-                                id: "m1",
-                                english: "January (31 Days)",
-                                literal: "Makara (Capricorn) + 31 Days",
-                                thaiFull: "มกราคม",
-                                tokens: [
-                                    { thai: "มก", phonics: "Mak", meaning: "Capricorn", tone: "High" },
-                                    { thai: "รา", phonics: "raa", meaning: "Zodiac suffix", tone: "Mid" },
-                                    { thai: "คม", phonics: "khom", meaning: "31 Days Suffix", tone: "Mid" }
-                                ]
-                            },
-                            {
-                                id: "m2",
-                                english: "April (30 Days)",
-                                literal: "Mesha (Aries) + 30 Days",
-                                thaiFull: "เมษายน",
-                                tokens: [
-                                    { thai: "เม", phonics: "May", meaning: "Aries", tone: "Mid" },
-                                    { thai: "ษา", phonics: "saa", meaning: "Zodiac suffix", tone: "Rising" },
-                                    { thai: "ยน", phonics: "yon", meaning: "30 Days Suffix", tone: "Mid" }
-                                ]
-                            },
-                            {
-                                id: "m3",
-                                english: "October (31 Days - Your Trip)",
-                                literal: "Tula (Libra) + 31 Days",
-                                thaiFull: "ตุลาคม",
-                                tokens: [
-                                    { thai: "ตุ", phonics: "Tu", meaning: "Libra", tone: "Low" },
-                                    { thai: "ลา", phonics: "laa", meaning: "Zodiac suffix", tone: "Mid" },
-                                    { thai: "คม", phonics: "khom", meaning: "31 Days Suffix", tone: "Mid" }
-                                ]
-                            },
-                            {
-                                id: "m4",
-                                english: "December (31 Days)",
-                                literal: "Dhanu (Sagittarius) + 31 Days",
-                                thaiFull: "ธันวาคม",
-                                tokens: [
-                                    { thai: "ธัน", phonics: "Than", meaning: "Sagittarius", tone: "Mid" },
-                                    { thai: "วา", phonics: "waa", meaning: "Zodiac suffix", tone: "Mid" },
-                                    { thai: "คม", phonics: "khom", meaning: "31 Days Suffix", tone: "Mid" }
-                                ]
-                            }
-                        ]
-                    },
-                    relative: {
-                        title: "Time Indicators (The Vectors)",
-                        description: "Anchoring your position in time.",
-                        cards: [
-                            {
-                                id: "t1",
-                                english: "Today",
-                                literal: "Day + This",
-                                thaiFull: "วันนี้",
-                                tokens: [
-                                    { thai: "วัน", phonics: "Wan", meaning: "Day", tone: "Mid" },
-                                    { thai: "นี้", phonics: "nee", meaning: "This", tone: "High" }
-                                ]
-                            },
-                            {
-                                id: "t2",
-                                english: "Tomorrow",
-                                literal: "Tomorrow + This",
-                                thaiFull: "พรุ่งนี้",
-                                tokens: [
-                                    { thai: "พรุ่ง", phonics: "Phrung", meaning: "Tomorrow (Root)", tone: "Falling" },
-                                    { thai: "นี้", phonics: "nee", meaning: "This", tone: "High" }
-                                ]
-                            },
-                            {
-                                id: "t3",
-                                english: "Yesterday",
-                                literal: "When/Past + Day",
-                                thaiFull: "เมื่อวาน",
-                                tokens: [
-                                    { thai: "เมื่อ", phonics: "Muea", meaning: "When/Past", tone: "Falling" },
-                                    { thai: "วาน", phonics: "waan", meaning: "Day (Past context)", tone: "Mid" }
-                                ]
-                            }
-                        ]
-                    },
-                    holidays: {
-                        title: "Holidays (Wan Yut & Chaos)",
-                        description: "When the transit system gets chaotic.",
-                        cards: [
-                            {
-                                id: "h1",
-                                english: "Holiday / Day Off",
-                                literal: "Day + Stop",
-                                thaiFull: "วันหยุด",
-                                tokens: [
-                                    { thai: "วัน", phonics: "Wan", meaning: "Day", tone: "Mid" },
-                                    { thai: "หยุด", phonics: "yut", meaning: "To Stop", tone: "Low" }
-                                ]
-                            },
-                            {
-                                id: "h2",
-                                english: "Songkran (Water Festival)",
-                                literal: "Astrological Passage",
-                                thaiFull: "สงกรานต์",
-                                tokens: [
-                                    { thai: "สง", phonics: "Song", meaning: "Passage", tone: "Rising" },
-                                    { thai: "กรานต์", phonics: "kraan", meaning: "Festival", tone: "Mid" }
-                                ]
-                            }
-                        ]
-                    }
-                }
-            },
-            transit_logistics: {
-                title: "Transit Logistics (Bangkok BTS/MRT)",
-                modules: {
-                    ticketing: {
-                        title: "Ticketing & Entry Procedures",
-                        description: "Getting through the gates without friction.",
-                        cards: [
-                            {
-                                id: "tr1",
-                                english: "Station",
-                                literal: "Base structural location",
-                                thaiFull: "สถานี",
-                                tokens: [
-                                    { thai: "ส", phonics: "Sa", meaning: "Place (prefix)", tone: "Low" },
-                                    { thai: "ถา", phonics: "thaa", meaning: "Base", tone: "Rising" },
-                                    { thai: "นี", phonics: "nee", meaning: "Location", tone: "Mid" }
-                                ]
-                            },
-                            {
-                                id: "tr2",
-                                english: "Skytrain",
-                                literal: "Car + Fire/Electricity",
-                                thaiFull: "รถไฟฟ้า",
-                                tokens: [
-                                    { thai: "รถ", phonics: "Rot", meaning: "Car/Vehicle", tone: "High" },
-                                    { thai: "ไฟ", phonics: "fai", meaning: "Fire/Power", tone: "Mid" },
-                                    { thai: "ฟ้า", phonics: "faa", meaning: "Sky", tone: "High" }
-                                ]
-                            }
-                        ]
                     }
                 }
             }
@@ -264,15 +124,9 @@
         // ==========================================
 
         const App = () => {
-            // STATE: Workspace Routing
-            // currentView: 'HUB' | 'WORKSPACE'
             const [currentView, setCurrentView] = useState('HUB');
-            
-            // Track exactly what module we are in
             const [activeCategory, setActiveCategory] = useState(null);
             const [activeModule, setActiveModule] = useState(null);
-            
-            // STATE: Master Index Accordion Expansion
             const [expandedCategories, setExpandedCategories] = useState({});
 
             const toggleCategory = (catKey) => {
@@ -297,8 +151,6 @@
             return (
                 <div className="min-h-screen bg-slate-900 text-slate-200 p-4 md:p-8 flex justify-center">
                     <div className="w-full max-w-4xl border border-slate-700 bg-slate-800 rounded-lg shadow-2xl overflow-hidden flex flex-col h-[90vh]">
-                        
-                        {/* GLOBAL NAVIGATION BAR */}
                         <div className="bg-slate-950 border-b border-cyan-800/50 p-4 flex items-center justify-between shadow-md z-10">
                             <div className="flex items-center gap-4">
                                 {currentView === 'WORKSPACE' && (
@@ -315,7 +167,6 @@
                             </div>
                         </div>
 
-                        {/* VIEW ROUTER */}
                         <div className="flex-1 overflow-y-auto p-6 relative">
                             {currentView === 'HUB' && (
                                 <MasterIndex 
@@ -336,7 +187,6 @@
             );
         };
 
-        // --- THE MASTER INDEX VIEW ---
         const MasterIndex = ({ expanded, toggle, openWorkspace }) => {
             return (
                 <div className="space-y-6 animate-fade-in">
@@ -387,10 +237,41 @@
             );
         };
 
-        // --- THE ISOLATED WORKSPACE VIEW ---
         const Workspace = ({ categoryKey, moduleKey }) => {
             const data = DATABASE[categoryKey].modules[moduleKey];
-            const [activeIndex, setActiveIndex] = useState(0); // For pagination if needed, but we'll list them linearly for study flow.
+            const [isLogging, setIsLogging] = useState(false);
+            const [logStatus, setLogStatus] = useState(null);
+
+            // THIS IS THE NEW FETCH FUNCTION THAT TALKS TO YOUR SHEET
+            const handleVerifyAndLog = async () => {
+                if (WEB_APP_URL === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") {
+                    alert("Hold up. You need to paste your Apps Script Web App URL at the top of the HTML file first.");
+                    return;
+                }
+                
+                setIsLogging(true);
+                setLogStatus("Logging session to database...");
+                
+                try {
+                    const response = await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ topic: data.title }),
+                        // Using text/plain avoids CORS preflight errors with Google Apps Script
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    });
+                    
+                    const result = await response.json();
+                    if (result.status === "success") {
+                        setLogStatus(`Logged! You have studied this ${result.sessionsToday} time(s) today.`);
+                    } else {
+                        setLogStatus("Error logging session.");
+                    }
+                } catch (error) {
+                    console.error("Logging error:", error);
+                    setLogStatus("Failed to connect to database.");
+                }
+                setIsLogging(false);
+            };
 
             return (
                 <div className="animate-fade-in pb-12">
@@ -405,20 +286,32 @@
                         ))}
                     </div>
                     
-                    <div className="mt-12 pt-6 border-t border-slate-700 text-center">
-                        <button className="bg-cyan-900 hover:bg-cyan-800 text-cyan-100 font-bold py-3 px-8 rounded border border-cyan-700 tracking-wider shadow-lg">
-                            TEST & VERIFY CHAIN (ACTIVE RECALL)
+                    <div className="mt-12 pt-6 border-t border-slate-700 text-center flex flex-col items-center">
+                        <button 
+                            onClick={handleVerifyAndLog}
+                            disabled={isLogging}
+                            className={`font-bold py-3 px-8 rounded border tracking-wider shadow-lg transition-all ${
+                                isLogging 
+                                    ? "bg-slate-700 text-slate-400 border-slate-600" 
+                                    : "bg-cyan-900 hover:bg-cyan-800 text-cyan-100 border-cyan-700"
+                            }`}
+                        >
+                            {isLogging ? "LOGGING SESSION..." : "TEST & VERIFY CHAIN (ACTIVE RECALL)"}
                         </button>
+                        
+                        {logStatus && (
+                            <div className="mt-4 text-cyan-400 font-mono text-sm bg-slate-800/80 p-3 rounded border border-cyan-900 shadow-inner inline-block">
+                                {logStatus}
+                            </div>
+                        )}
                     </div>
                 </div>
             );
         };
 
-        // --- THE STUDY CARD & KARAOKE ENGINE ---
         const StudyCard = ({ card, stepNum }) => {
             const [activeTokenIdx, setActiveTokenIdx] = useState(null);
 
-            // Web Speech API Synthesis
             const speakSequence = (tokens, specificIndex = null) => {
                 if (!('speechSynthesis' in window)) {
                     alert("Your browser does not support SpeechSynthesis.");
@@ -427,7 +320,6 @@
                 window.speechSynthesis.cancel();
 
                 if (specificIndex !== null) {
-                    // Speak single isolated syllable
                     setActiveTokenIdx(specificIndex);
                     const utterance = new SpeechSynthesisUtterance(tokens[specificIndex].thai);
                     utterance.lang = 'th-TH';
@@ -435,30 +327,26 @@
                     utterance.onend = () => setActiveTokenIdx(null);
                     window.speechSynthesis.speak(utterance);
                 } else {
-                    // Speak full word, highlighting sequentially
-                    // Note: Reliable real-time word-boundary tracking in JS is notoriously flaky for Thai, 
-                    // so we simulate the structural chunking perfectly for the ADHD brain.
                     let delay = 0;
                     tokens.forEach((tok, idx) => {
                         setTimeout(() => {
                             setActiveTokenIdx(idx);
                             const utterance = new SpeechSynthesisUtterance(tok.thai);
                             utterance.lang = 'th-TH';
-                            utterance.rate = 0.85; // slightly slowed for clarity
+                            utterance.rate = 0.85; 
                             
                             if (idx === tokens.length - 1) {
                                 utterance.onend = () => setActiveTokenIdx(null);
                             }
                             window.speechSynthesis.speak(utterance);
                         }, delay);
-                        delay += 900; // approximate gap for simulated structural playback
+                        delay += 900; 
                     });
                 }
             };
 
             return (
                 <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md">
-                    {/* Header */}
                     <div className="bg-slate-900 p-4 border-b border-slate-700 flex justify-between items-center">
                         <div className="flex items-center gap-3">
                             <span className="bg-cyan-900 text-cyan-300 font-bold px-3 py-1 rounded text-sm">
@@ -471,7 +359,6 @@
                         </span>
                     </div>
 
-                    {/* Audio Control */}
                     <div className="p-6">
                         <button 
                             onClick={() => speakSequence(card.tokens)}
@@ -483,7 +370,6 @@
                             PLAY AUDIO & FOLLOW SCRIPT
                         </button>
 
-                        {/* Inline Karaoke Breakdown Box */}
                         <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 overflow-x-auto">
                             <p className="text-xs text-slate-500 uppercase tracking-widest mb-4 font-bold border-b border-slate-800 pb-2">
                                 Structural Script Decoder (Click Syllable to Isolate)
@@ -500,12 +386,10 @@
                                                 : 'border-slate-700 bg-slate-800 hover:border-slate-500 hover:bg-slate-750'
                                         }`}
                                     >
-                                        {/* Large Thai Script for visual mapping */}
                                         <div className="thai-text text-5xl font-black mb-3 text-white tracking-wide">
                                             {tok.thai}
                                         </div>
                                         
-                                        {/* Phonics & Translation Data */}
                                         <div className="w-full text-center space-y-1">
                                             <div className="text-cyan-300 font-mono text-lg font-bold tracking-widest bg-black/30 rounded py-1">
                                                 {tok.phonics}
@@ -518,7 +402,7 @@
                                                 tok.tone === 'High' ? 'bg-red-900/50 text-red-300' :
                                                 tok.tone === 'Low' ? 'bg-blue-900/50 text-blue-300' :
                                                 tok.tone === 'Falling' ? 'bg-orange-900/50 text-orange-300' :
-                                                'bg-purple-900/50 text-purple-300' // Rising
+                                                'bg-purple-900/50 text-purple-300' 
                                             }`}>
                                                 {tok.tone} TONE
                                             </div>
