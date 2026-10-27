@@ -62,7 +62,6 @@
             }
         };
 
-        // GLOBAL UTTERANCE ARRAY (Prevents iOS Safari garbage collection from killing audio)
         window.speechUtterances = [];
 
         // ==========================================
@@ -75,12 +74,10 @@
             const [activeModule, setActiveModule] = useState(null);
             const [expandedCategories, setExpandedCategories] = useState({});
 
-            // --- SPACED REPETITION ENGINE ---
             const [studyState, setStudyState] = useState(() => {
                 const saved = localStorage.getItem('thaiSpacedRepetition');
                 const today = new Date().toDateString();
                 
-                // Build ordered list of all modules
                 let allModules = [];
                 Object.keys(DATABASE).forEach(cat => {
                     Object.keys(DATABASE[cat].modules).forEach(mod => {
@@ -90,11 +87,9 @@
 
                 if (saved) {
                     let parsed = JSON.parse(saved);
-                    // Daily Reset Logic
                     if (parsed.lastDate !== today) {
-                        parsed.completedToday = []; // Reset daily limit
+                        parsed.completedToday = []; 
                         parsed.lastDate = today;
-                        // Unlock one new module if available
                         if (parsed.unlockedCount < allModules.length) {
                             parsed.unlockedCount += 1;
                         }
@@ -103,17 +98,15 @@
                     return parsed;
                 }
 
-                // First time user setup
                 return {
                     lastDate: today,
                     completedToday: [],
-                    streaks: {}, // { 'cat|mod': { count: 0, lastStudied: null } }
-                    unlockedCount: 1, // Start with exactly 1 unlocked module
+                    streaks: {}, 
+                    unlockedCount: 1, 
                     allModules: allModules
                 };
             });
 
-            // Save state to local storage whenever it changes
             useEffect(() => {
                 localStorage.setItem('thaiSpacedRepetition', JSON.stringify(studyState));
             }, [studyState]);
@@ -150,7 +143,7 @@
             return (
                 <div className="min-h-screen bg-slate-900 text-slate-200 p-4 md:p-8 flex justify-center">
                     <div className="w-full max-w-4xl border border-slate-700 bg-slate-800 rounded-lg shadow-2xl overflow-hidden flex flex-col h-[90vh]">
-                        <div className="bg-slate-950 border-b border-cyan-800/50 p-4 flex items-center justify-between shadow-md z-10">
+                        <div className="bg-slate-950 border-b border-cyan-800/50 p-4 flex items-center justify-between shadow-md z-10 shrink-0">
                             <div className="flex items-center gap-4">
                                 {currentView === 'WORKSPACE' && (
                                     <button 
@@ -160,16 +153,16 @@
                                         <span>←</span> Hub
                                     </button>
                                 )}
-                                <h1 className="text-xl font-black tracking-widest text-slate-100 uppercase">
+                                <h1 className="text-xl font-black tracking-widest text-slate-100 uppercase hidden sm:block">
                                     Command Deck <span className="text-cyan-500 font-normal">| SR-Active</span>
                                 </h1>
                             </div>
                             <div className="text-sm font-mono text-cyan-400 bg-cyan-900/30 px-3 py-1 rounded border border-cyan-800">
-                                DAILY BANDWIDTH: {studyState.completedToday.length} / 3
+                                BANDWIDTH: {studyState.completedToday.length}/3
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 relative">
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 relative">
                             {currentView === 'HUB' && (
                                 <MasterIndex 
                                     studyState={studyState}
@@ -242,11 +235,11 @@
                                                             </div>
                                                             
                                                             {isUnlocked && (
-                                                                <div className="text-right">
+                                                                <div className="text-right shrink-0 ml-4">
                                                                     <div className={`font-mono text-sm font-bold ${streak > 0 ? 'streak-fire' : 'text-slate-600'}`}>
-                                                                        {streak}/7 STREAK
+                                                                        {streak}/7
                                                                     </div>
-                                                                    {completedToday && <div className="text-xs text-green-400 mt-1">DONE TODAY</div>}
+                                                                    {completedToday && <div className="text-xs text-green-400 mt-1">DONE</div>}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -282,35 +275,33 @@
                 }
                 
                 setIsLogging(true);
-                setLogStatus("Syncing to Google Sheets & Updating Streak...");
+                setLogStatus("Syncing to database...");
                 
                 try {
-                    // 1. Log to your Google Sheet backup
                     await fetch(WEB_APP_URL, {
                         method: 'POST',
                         body: JSON.stringify({ topic: data.title }),
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                     });
                     
-                    // 2. Update Local Device Spaced Repetition State
                     handleCompletion(categoryKey, moduleKey);
                     setLogStatus(`Success! Streak increased. Section locked for today.`);
                 } catch (error) {
                     console.error("Logging error:", error);
                     setLogStatus("Error syncing to cloud, but local streak updated.");
-                    handleCompletion(categoryKey, moduleKey); // Allow local progress even if offline
+                    handleCompletion(categoryKey, moduleKey); 
                 }
                 setIsLogging(false);
             };
 
             return (
                 <div className="animate-fade-in pb-12">
-                    <div className="mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+                    <div className="mb-8 border-b border-slate-700 pb-4 flex justify-between items-end gap-4">
                         <div>
-                            <h2 className="text-3xl font-black text-white">{data.title}</h2>
-                            <p className="text-cyan-400 mt-2 text-lg">{data.description}</p>
+                            <h2 className="text-2xl sm:text-3xl font-black text-white">{data.title}</h2>
+                            <p className="text-cyan-400 mt-2 text-base sm:text-lg">{data.description}</p>
                         </div>
-                        <div className="font-mono text-xl font-bold streak-fire bg-slate-900 p-3 rounded border border-slate-700">
+                        <div className="font-mono text-lg sm:text-xl font-bold streak-fire bg-slate-900 p-2 sm:p-3 rounded border border-slate-700 shrink-0">
                             🔥 {studyState.streaks[moduleId]?.count || 0}/7 
                         </div>
                     </div>
@@ -331,7 +322,7 @@
                         <button 
                             onClick={handleVerifyAndLog}
                             disabled={!canVerify || isLogging}
-                            className={`font-bold py-4 px-10 rounded border tracking-widest text-lg shadow-lg transition-all ${
+                            className={`font-bold py-4 px-6 sm:px-10 rounded border tracking-widest text-sm sm:text-lg shadow-lg transition-all w-full sm:w-auto ${
                                 !canVerify 
                                     ? "bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed" 
                                     : isLogging
@@ -343,7 +334,7 @@
                         </button>
                         
                         {logStatus && (
-                            <div className="mt-4 text-cyan-400 font-mono text-sm bg-slate-800/80 p-3 rounded border border-cyan-900">
+                            <div className="mt-4 text-cyan-400 font-mono text-sm bg-slate-800/80 p-3 rounded border border-cyan-900 w-full sm:w-auto">
                                 {logStatus}
                             </div>
                         )}
@@ -352,7 +343,6 @@
             );
         };
 
-        // --- THE IOS-SAFE AUDIO ENGINE ---
         const StudyCard = ({ card, stepNum }) => {
             const [activeTokenIdx, setActiveTokenIdx] = useState(null);
 
@@ -363,7 +353,7 @@
                 }
                 
                 window.speechSynthesis.cancel();
-                window.speechUtterances = []; // Clear old queue
+                window.speechUtterances = []; 
 
                 if (specificIndex !== null) {
                     const utterance = new SpeechSynthesisUtterance(tokens[specificIndex].thai);
@@ -374,11 +364,10 @@
                     setActiveTokenIdx(specificIndex);
                     window.speechSynthesis.speak(utterance);
                 } else {
-                    // Queue all utterances immediately (Bypasses iOS strict timeout rules)
                     tokens.forEach((tok, idx) => {
                         const utterance = new SpeechSynthesisUtterance(tok.thai);
                         utterance.lang = 'th-TH';
-                        utterance.rate = 0.75; // Slower for clarity
+                        utterance.rate = 0.75; 
                         
                         utterance.onstart = () => setActiveTokenIdx(idx);
                         if (idx === tokens.length - 1) {
@@ -393,39 +382,40 @@
 
             return (
                 <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md">
-                    <div className="bg-slate-900 p-4 border-b border-slate-700 flex justify-between items-center">
+                    <div className="bg-slate-900 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                         <div className="flex items-center gap-3">
-                            <span className="bg-cyan-900 text-cyan-300 font-bold px-3 py-1 rounded text-sm">STEP {stepNum}</span>
-                            <h3 className="text-xl font-bold text-white uppercase tracking-wider">{card.english}</h3>
+                            <span className="bg-cyan-900 text-cyan-300 font-bold px-3 py-1 rounded text-sm shrink-0">STEP {stepNum}</span>
+                            <h3 className="text-lg sm:text-xl font-bold text-white uppercase tracking-wider">{card.english}</h3>
                         </div>
-                        <span className="text-slate-400 text-sm font-mono bg-slate-800 px-2 py-1 rounded">{card.literal}</span>
+                        <span className="text-slate-400 text-xs sm:text-sm font-mono bg-slate-800 px-2 py-1 rounded w-full sm:w-auto text-left sm:text-right">{card.literal}</span>
                     </div>
 
-                    <div className="p-6">
+                    <div className="p-4 sm:p-6">
                         <button 
                             onClick={() => speakSequence(card.tokens)}
-                            className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 px-4 rounded mb-6 flex items-center justify-center gap-3 transition-colors border border-slate-500 shadow-lg"
+                            className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 sm:py-4 px-4 rounded mb-6 flex items-center justify-center gap-3 transition-colors border border-slate-500 shadow-lg text-sm sm:text-base"
                         >
-                            ▶️ PLAY FULL PHRASE (IOS SAFE)
+                            ▶️ SOUND IT OUT
                         </button>
 
-                        <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 overflow-x-auto">
-                            <div className="flex gap-2 min-w-max">
+                        <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 sm:p-6">
+                            {/* UPDATED: Flex-wrap allows boxes to stack automatically when out of room */}
+                            <div className="flex flex-wrap justify-center gap-3 w-full">
                                 {card.tokens.map((tok, idx) => (
                                     <div 
                                         key={idx}
                                         onClick={() => speakSequence(card.tokens, idx)}
-                                        className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 min-w-[120px] ${
+                                        className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 flex-1 min-w-[120px] max-w-[180px] ${
                                             activeTokenIdx === idx 
                                                 ? 'border-cyan-400 bg-cyan-900/50 transform scale-105 shadow-[0_0_20px_rgba(34,211,238,0.4)]' 
                                                 : 'border-slate-700 bg-slate-800 hover:border-slate-500'
                                         }`}
                                     >
-                                        <div className="thai-text text-5xl font-black mb-3 text-white">{tok.thai}</div>
+                                        <div className="thai-text text-4xl sm:text-5xl font-black mb-3 text-white">{tok.thai}</div>
                                         <div className="w-full text-center space-y-1">
-                                            <div className="text-cyan-300 font-mono text-lg font-bold bg-black/30 rounded py-1">{tok.phonics}</div>
-                                            <div className="text-slate-300 text-sm font-semibold truncate px-1">"{tok.meaning}"</div>
-                                            <div className="text-[10px] uppercase tracking-wider font-bold mt-2 text-slate-400 bg-slate-900 border border-slate-700 px-2 py-1 rounded">
+                                            <div className="text-cyan-300 font-mono text-sm sm:text-lg font-bold bg-black/30 rounded py-1 px-1 break-all">{tok.phonics}</div>
+                                            <div className="text-slate-300 text-xs sm:text-sm font-semibold truncate px-1">"{tok.meaning}"</div>
+                                            <div className="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold mt-2 text-slate-400 bg-slate-900 border border-slate-700 px-2 py-1 rounded inline-block">
                                                 {tok.tone} TONE
                                             </div>
                                         </div>
