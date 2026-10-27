@@ -86,16 +86,25 @@
                 });
 
                 if (saved) {
-                    let parsed = JSON.parse(saved);
-                    if (parsed.lastDate !== today) {
-                        parsed.completedToday = []; 
-                        parsed.lastDate = today;
-                        if (parsed.unlockedCount < allModules.length) {
-                            parsed.unlockedCount += 1;
+                    try {
+                        let parsed = JSON.parse(saved);
+                        // FIXED: Ensuring robust fallbacks so the UI doesn't flatline on missing properties
+                        parsed.completedToday = parsed.completedToday || [];
+                        parsed.streaks = parsed.streaks || {};
+                        parsed.unlockedCount = parsed.unlockedCount || 1;
+
+                        if (parsed.lastDate !== today) {
+                            parsed.completedToday = []; 
+                            parsed.lastDate = today;
+                            if (parsed.unlockedCount < allModules.length) {
+                                parsed.unlockedCount += 1;
+                            }
                         }
+                        parsed.allModules = allModules; 
+                        return parsed;
+                    } catch (e) {
+                        console.error("Storage corrupted. Wiping the slate clean.");
                     }
-                    parsed.allModules = allModules; 
-                    return parsed;
                 }
 
                 return {
@@ -263,34 +272,51 @@
             const [isLogging, setIsLogging] = useState(false);
             const [logStatus, setLogStatus] = useState(null);
 
+            // PROGRESSION STATE
+            const [targetIdx, setTargetIdx] = useState(0);
+            const [playCount, setPlayCount] = useState(0);
+
             const isCompletedToday = studyState.completedToday.includes(moduleId);
             const isDailyLimitReached = studyState.completedToday.length >= 3;
-            
             const canVerify = !isCompletedToday && !isDailyLimitReached;
+            const isSessionComplete = targetIdx === data.cards.length - 1 && playCount >= 10;
+
+            const handleCardPlay = (cardIndex) => {
+                if (cardIndex === targetIdx) {
+                    setPlayCount(prev => prev + 1);
+                }
+            };
+
+            const advanceSequence = () => {
+                setTargetIdx(prev => prev + 1);
+                setPlayCount(0);
+            };
 
             const handleVerifyAndLog = async () => {
-                if (WEB_APP_URL === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") {
-                    alert("Apps Script URL missing in HTML. Fix Line 30.");
-                    return;
-                }
+                const isDefaultUrl = WEB_APP_URL === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
                 
                 setIsLogging(true);
-                setLogStatus("Syncing to database...");
+                setLogStatus(isDefaultUrl ? "Saving progress locally..." : "Syncing to database...");
                 
-                try {
-                    await fetch(WEB_APP_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ topic: data.title }),
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                    });
-                    
-                    handleCompletion(categoryKey, moduleKey);
-                    setLogStatus(`Success! Streak increased. Section locked for today.`);
-                } catch (error) {
-                    console.error("Logging error:", error);
-                    setLogStatus("Error syncing to cloud, but local streak updated.");
-                    handleCompletion(categoryKey, moduleKey); 
+                if (!isDefaultUrl) {
+                    try {
+                        await fetch(WEB_APP_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({ topic: data.title }),
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                        });
+                        setLogStatus(`Success! Streak increased. Section locked for today.`);
+                    } catch (error) {
+                        console.error("Logging error:", error);
+                        setLogStatus("Error syncing to cloud, but local streak updated.");
+                    }
+                } else {
+                    // FIXED: Replaced the blocking alert with a graceful bypass so you can actually progress.
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    setLogStatus("Local streak updated. (Add Apps Script URL to sync to cloud)");
                 }
+                
+                handleCompletion(categoryKey, moduleKey);
                 setIsLogging(false);
             };
 
@@ -307,9 +333,20 @@
                     </div>
 
                     <div className="space-y-12">
-                        {data.cards.map((card, index) => (
-                            <StudyCard key={card.id} card={card} stepNum={index + 1} />
-                        ))}
+                        {/* Display sequential progression: only render up to the target index */}
+                        {data.cards.slice(0, targetIdx + 1).map((card, index) => {
+                            const isActiveTarget = index === targetIdx;
+                            return (
+                                <StudyCard 
+                                    key={card.id} 
+                                    card={card} 
+                                    stepNum={index + 1} 
+                                    isActiveTarget={isActiveTarget}
+                                    playCount={isActiveTarget ? playCount : 10}
+                                    onPlayFull={() => handleCardPlay(index)}
+                                />
+                            );
+                        })}
                     </div>
                     
                     <div className="mt-12 pt-6 border-t border-slate-700 text-center flex flex-col items-center">
@@ -319,19 +356,35 @@
                             </div>
                         )}
                         
-                        <button 
-                            onClick={handleVerifyAndLog}
-                            disabled={!canVerify || isLogging}
-                            className={`font-bold py-4 px-6 sm:px-10 rounded border tracking-widest text-sm sm:text-lg shadow-lg transition-all w-full sm:w-auto ${
-                                !canVerify 
-                                    ? "bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed" 
-                                    : isLogging
-                                        ? "bg-cyan-900 text-cyan-400 border-cyan-700 opacity-50"
+                        {targetIdx < data.cards.length - 1 ? (
+                            <button 
+                                onClick={advanceSequence}
+                                disabled={playCount < 10}
+                                className={`font-bold py-4 px-6 sm:px-10 rounded border tracking-widest text-sm sm:text-lg shadow-lg transition-all w-full sm:w-auto ${
+                                    playCount < 10
+                                        ? "bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed" 
                                         : "bg-cyan-600 hover:bg-cyan-500 text-white border-cyan-400 shadow-[0_0_15px_rgba(8,145,178,0.5)]"
-                            }`}
-                        >
-                            {isCompletedToday ? "✅ COMPLETED FOR TODAY" : isLogging ? "SYNCING..." : "COMMIT TO MEMORY & END SESSION"}
-                        </button>
+                                }`}
+                            >
+                                {playCount < 10 ? `LOCKED: ${10 - playCount} REPS REMAINING` : "UNLOCK NEXT WORD"}
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handleVerifyAndLog}
+                                disabled={!canVerify || isLogging || !isSessionComplete}
+                                className={`font-bold py-4 px-6 sm:px-10 rounded border tracking-widest text-sm sm:text-lg shadow-lg transition-all w-full sm:w-auto ${
+                                    (!canVerify || !isSessionComplete)
+                                        ? "bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed" 
+                                        : isLogging
+                                            ? "bg-cyan-900 text-cyan-400 border-cyan-700 opacity-50"
+                                            : "bg-cyan-600 hover:bg-cyan-500 text-white border-cyan-400 shadow-[0_0_15px_rgba(8,145,178,0.5)]"
+                                }`}
+                            >
+                                {isCompletedToday ? "✅ COMPLETED FOR TODAY" : 
+                                 !isSessionComplete ? `LOCKED: ${10 - playCount} REPS REMAINING` :
+                                 isLogging ? "SYNCING..." : "COMMIT TO MEMORY & END SESSION"}
+                            </button>
+                        )}
                         
                         {logStatus && (
                             <div className="mt-4 text-cyan-400 font-mono text-sm bg-slate-800/80 p-3 rounded border border-cyan-900 w-full sm:w-auto">
@@ -343,7 +396,7 @@
             );
         };
 
-        const StudyCard = ({ card, stepNum }) => {
+        const StudyCard = ({ card, stepNum, isActiveTarget, playCount, onPlayFull }) => {
             const [activeTokenIdx, setActiveTokenIdx] = useState(null);
 
             const speakSequence = (tokens, specificIndex = null) => {
@@ -377,11 +430,16 @@
                         window.speechUtterances.push(utterance);
                         window.speechSynthesis.speak(utterance);
                     });
+                    
+                    // Trigger the requirement log when they play the full sequence
+                    if (onPlayFull) {
+                        onPlayFull();
+                    }
                 }
             };
 
             return (
-                <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md">
+                <div className={`bg-slate-800 border ${isActiveTarget ? 'border-cyan-500 shadow-[0_0_15px_rgba(8,145,178,0.2)]' : 'border-slate-700'} rounded-xl overflow-hidden shadow-md transition-all`}>
                     <div className="bg-slate-900 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                         <div className="flex items-center gap-3">
                             <span className="bg-cyan-900 text-cyan-300 font-bold px-3 py-1 rounded text-sm shrink-0">STEP {stepNum}</span>
@@ -391,15 +449,28 @@
                     </div>
 
                     <div className="p-4 sm:p-6">
-                        <button 
-                            onClick={() => speakSequence(card.tokens)}
-                            className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 sm:py-4 px-4 rounded mb-6 flex items-center justify-center gap-3 transition-colors border border-slate-500 shadow-lg text-sm sm:text-base"
-                        >
-                            ▶️ SOUND IT OUT
-                        </button>
+                        <div className="flex flex-col gap-2 mb-6">
+                            <button 
+                                onClick={() => speakSequence(card.tokens)}
+                                className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 sm:py-4 px-4 rounded flex items-center justify-center gap-3 transition-colors border border-slate-500 shadow-lg text-sm sm:text-base"
+                            >
+                                ▶️ SOUND IT OUT
+                            </button>
+                            
+                            {isActiveTarget && (
+                                <div className="bg-slate-900 rounded-lg p-3 border border-cyan-800/50">
+                                    <div className="flex justify-between text-xs font-bold text-cyan-400 mb-1 tracking-wider">
+                                        <span>AUDIO REPETITIONS REQUIRED</span>
+                                        <span>{playCount} / 10</span>
+                                    </div>
+                                    <div className="w-full bg-slate-800 rounded-full h-2">
+                                        <div className="bg-cyan-500 h-2 rounded-full transition-all duration-300" style={{ width: `${Math.min((playCount / 10) * 100, 100)}%` }}></div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 sm:p-6">
-                            {/* UPDATED: Flex-wrap allows boxes to stack automatically when out of room */}
                             <div className="flex flex-wrap justify-center gap-3 w-full">
                                 {card.tokens.map((tok, idx) => (
                                     <div 
