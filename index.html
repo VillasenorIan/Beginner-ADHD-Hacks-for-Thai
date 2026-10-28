@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thai Command Deck: Temporal Logistics</title>
+    <title>Thai Command Deck: Logistics</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -14,9 +14,10 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        
         .locked-module { opacity: 0.5; pointer-events: none; filter: grayscale(100%); }
         .streak-fire { color: #f97316; text-shadow: 0 0 10px rgba(249,115,22,0.5); }
+        .loader { border: 4px solid #1e293b; border-top: 4px solid #06b6d4; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -26,99 +27,89 @@
         const { useState, useEffect } = React;
 
         // ==========================================
-        // 🚨 YOUR DATABASE WEB APP URL GOES HERE 🚨
+        // 🚨 YOUR APPS SCRIPT URL GOES HERE 🚨
         // ==========================================
         const WEB_APP_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE"; 
 
-        // ==========================================
-        // DATA LOGISTICS: THE MASTER INDEX & MODULES
-        // ==========================================
-        const DATABASE = {
-            temporal_logistics: {
-                title: "Temporal Logistics (Dates & Time)",
-                modules: {
-                    days: {
-                        title: "Days of the Week (The 'Wan' Protocol)",
-                        description: "Every day starts with 'Wan' (Day) and is anchored to a celestial body.",
-                        cards: [
-                            { id: "d1", english: "Monday", literal: "Day + Moon", thaiFull: "วันจันทร์", tokens: [{ thai: "วัน", phonics: "Wan", meaning: "Day", tone: "Mid" }, { thai: "จันทร์", phonics: "Jan", meaning: "Moon", tone: "Mid" }] },
-                            { id: "d2", english: "Tuesday", literal: "Day + Mars", thaiFull: "วันอังคาร", tokens: [{ thai: "วัน", phonics: "Wan", meaning: "Day", tone: "Mid" }, { thai: "อัง", phonics: "Ang", meaning: "Mars (Pt 1)", tone: "Mid" }, { thai: "คาร", phonics: "khaan", meaning: "Mars (Pt 2)", tone: "Mid" }] },
-                            { id: "d3", english: "Wednesday", literal: "Day + Mercury", thaiFull: "วันพุธ", tokens: [{ thai: "วัน", phonics: "Wan", meaning: "Day", tone: "Mid" }, { thai: "พุธ", phonics: "Phut", meaning: "Mercury", tone: "High" }] },
-                            { id: "d4", english: "Thursday", literal: "Day + Jupiter", thaiFull: "วันพฤหัสบดี", tokens: [{ thai: "วัน", phonics: "Wan", meaning: "Day", tone: "Mid" }, { thai: "พฤ", phonics: "Pha", meaning: "Jup (1)", tone: "High" }, { thai: "หัส", phonics: "hat", meaning: "Jup (2)", tone: "Low" }] },
-                            { id: "d5", english: "Friday", literal: "Day + Venus", thaiFull: "วันศุกร์", tokens: [{ thai: "วัน", phonics: "Wan", meaning: "Day", tone: "Mid" }, { thai: "ศุกร์", phonics: "Suk", meaning: "Venus", tone: "Low" }] },
-                            { id: "d6", english: "Saturday", literal: "Day + Saturn", thaiFull: "วันเสาร์", tokens: [{ thai: "วัน", phonics: "Wan", meaning: "Day", tone: "Mid" }, { thai: "เสาร์", phonics: "Sao", meaning: "Saturn", tone: "Rising" }] },
-                            { id: "d7", english: "Sunday", literal: "Day + Sun", thaiFull: "วันอาทิตย์", tokens: [{ thai: "วัน", phonics: "Wan", meaning: "Day", tone: "Mid" }, { thai: "อา", phonics: "Aa", meaning: "Sun (1)", tone: "Mid" }, { thai: "ทิตย์", phonics: "thit", meaning: "Sun (2)", tone: "High" }] }
-                        ]
-                    },
-                    months: {
-                        title: "Months of the Year (30/31 Algorithm)",
-                        description: "Months ending in -khom (คม) have 31 days. Months ending in -yon (ยน) have 30. -phan is Feb.",
-                        cards: [
-                            { id: "m1", english: "January", literal: "Makara + 31 Days", thaiFull: "มกราคม", tokens: [{ thai: "มก", phonics: "Mak", meaning: "Capricorn", tone: "High" }, { thai: "รา", phonics: "raa", meaning: "Zodiac suffix", tone: "Mid" }, { thai: "คม", phonics: "khom", meaning: "31 Days", tone: "Mid" }] },
-                            { id: "m2", english: "April", literal: "Mesha + 30 Days", thaiFull: "เมษายน", tokens: [{ thai: "เม", phonics: "May", meaning: "Aries", tone: "Mid" }, { thai: "ษา", phonics: "saa", meaning: "Zodiac suffix", tone: "Rising" }, { thai: "ยน", phonics: "yon", meaning: "30 Days", tone: "Mid" }] }
-                        ]
-                    }
-                }
-            }
-        };
-
         window.speechUtterances = [];
 
-        // ==========================================
-        // UI COMPONENTS & LOGIC
-        // ==========================================
-
         const App = () => {
+            const [DATABASE, setDatabase] = useState(null);
+            const [isLoading, setIsLoading] = useState(true);
+            const [fetchError, setFetchError] = useState(null);
+
             const [currentView, setCurrentView] = useState('HUB');
             const [activeCategory, setActiveCategory] = useState(null);
             const [activeModule, setActiveModule] = useState(null);
             const [expandedCategories, setExpandedCategories] = useState({});
 
-            const [studyState, setStudyState] = useState(() => {
-                const saved = localStorage.getItem('thaiSpacedRepetition');
-                const today = new Date().toDateString();
-                
-                let allModules = [];
-                Object.keys(DATABASE).forEach(cat => {
-                    Object.keys(DATABASE[cat].modules).forEach(mod => {
-                        allModules.push(`${cat}|${mod}`);
-                    });
-                });
-
-                if (saved) {
-                    try {
-                        let parsed = JSON.parse(saved);
-                        // FIXED: Ensuring robust fallbacks so the UI doesn't flatline on missing properties
-                        parsed.completedToday = parsed.completedToday || [];
-                        parsed.streaks = parsed.streaks || {};
-                        parsed.unlockedCount = parsed.unlockedCount || 1;
-
-                        if (parsed.lastDate !== today) {
-                            parsed.completedToday = []; 
-                            parsed.lastDate = today;
-                            if (parsed.unlockedCount < allModules.length) {
-                                parsed.unlockedCount += 1;
-                            }
-                        }
-                        parsed.allModules = allModules; 
-                        return parsed;
-                    } catch (e) {
-                        console.error("Storage corrupted. Wiping the slate clean.");
-                    }
-                }
-
-                return {
-                    lastDate: today,
-                    completedToday: [],
-                    streaks: {}, 
-                    unlockedCount: 1, 
-                    allModules: allModules
-                };
+            const [studyState, setStudyState] = useState({
+                lastDate: new Date().toDateString(),
+                completedToday: [],
+                streaks: {}, 
+                unlockedCount: 1, 
+                allModules: []
             });
 
+            // Boot Sequence: Fetch Data from Sheets
             useEffect(() => {
-                localStorage.setItem('thaiSpacedRepetition', JSON.stringify(studyState));
-            }, [studyState]);
+                if (WEB_APP_URL === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") {
+                    setFetchError("API OFFLINE: Insert your Apps Script URL at Line 28.");
+                    setIsLoading(false);
+                    return;
+                }
+
+                fetch(WEB_APP_URL)
+                    .then(res => res.json())
+                    .then(data => {
+                        setDatabase(data);
+                        
+                        let allModules = [];
+                        Object.keys(data).forEach(cat => {
+                            Object.keys(data[cat].modules).forEach(mod => {
+                                allModules.push(`${cat}|${mod}`);
+                            });
+                        });
+
+                        const saved = localStorage.getItem('thaiSpacedRepetition');
+                        const today = new Date().toDateString();
+                        
+                        if (saved) {
+                            try {
+                                let parsed = JSON.parse(saved);
+                                parsed.completedToday = parsed.completedToday || [];
+                                parsed.streaks = parsed.streaks || {};
+                                parsed.unlockedCount = parsed.unlockedCount || 1;
+
+                                if (parsed.lastDate !== today) {
+                                    parsed.completedToday = []; 
+                                    parsed.lastDate = today;
+                                    if (parsed.unlockedCount < allModules.length) {
+                                        parsed.unlockedCount += 1;
+                                    }
+                                }
+                                parsed.allModules = allModules; 
+                                setStudyState(parsed);
+                            } catch (e) {
+                                console.error("Corrupt local state. Resetting.");
+                            }
+                        } else {
+                            setStudyState(prev => ({ ...prev, allModules }));
+                        }
+                        setIsLoading(false);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        setFetchError("Failed to connect to Google Sheets Database. Check CORS or URL.");
+                        setIsLoading(false);
+                    });
+            }, []);
+
+            useEffect(() => {
+                if (!isLoading && !fetchError) {
+                    localStorage.setItem('thaiSpacedRepetition', JSON.stringify(studyState));
+                }
+            }, [studyState, isLoading, fetchError]);
 
             const toggleCategory = (catKey) => {
                 setExpandedCategories(prev => ({ ...prev, [catKey]: !prev[catKey] }));
@@ -149,6 +140,26 @@
                 });
             };
 
+            if (isLoading) {
+                return (
+                    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-cyan-500 font-mono">
+                        <div className="loader mb-4"></div>
+                        <div>ESTABLISHING SATELLITE LINK TO GOOGLE SHEETS...</div>
+                    </div>
+                );
+            }
+
+            if (fetchError) {
+                return (
+                    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-8">
+                        <div className="bg-red-900/20 border border-red-500 text-red-400 p-6 rounded text-center max-w-lg shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+                            <h2 className="text-xl font-bold mb-2 uppercase tracking-widest">Connection Severed</h2>
+                            <p className="font-mono text-sm">{fetchError}</p>
+                        </div>
+                    </div>
+                );
+            }
+
             return (
                 <div className="min-h-screen bg-slate-900 text-slate-200 p-4 md:p-8 flex justify-center">
                     <div className="w-full max-w-4xl border border-slate-700 bg-slate-800 rounded-lg shadow-2xl overflow-hidden flex flex-col h-[90vh]">
@@ -163,7 +174,7 @@
                                     </button>
                                 )}
                                 <h1 className="text-xl font-black tracking-widest text-slate-100 uppercase hidden sm:block">
-                                    Command Deck <span className="text-cyan-500 font-normal">| SR-Active</span>
+                                    Command Deck <span className="text-cyan-500 font-normal">| Connected</span>
                                 </h1>
                             </div>
                             <div className="text-sm font-mono text-cyan-400 bg-cyan-900/30 px-3 py-1 rounded border border-cyan-800">
@@ -174,6 +185,7 @@
                         <div className="flex-1 overflow-y-auto p-4 sm:p-6 relative">
                             {currentView === 'HUB' && (
                                 <MasterIndex 
+                                    DATABASE={DATABASE}
                                     studyState={studyState}
                                     expanded={expandedCategories}
                                     toggle={toggleCategory}
@@ -182,6 +194,7 @@
                             )}
                             {currentView === 'WORKSPACE' && (
                                 <Workspace 
+                                    DATABASE={DATABASE}
                                     categoryKey={activeCategory} 
                                     moduleKey={activeModule}
                                     studyState={studyState}
@@ -194,12 +207,12 @@
             );
         };
 
-        const MasterIndex = ({ studyState, expanded, toggle, openWorkspace }) => {
+        const MasterIndex = ({ DATABASE, studyState, expanded, toggle, openWorkspace }) => {
             return (
                 <div className="space-y-6 animate-fade-in">
                     <div className="mb-6 border-b border-slate-700 pb-4">
                         <h2 className="text-2xl font-bold text-white uppercase tracking-wider mb-2">Central Logistics Hub</h2>
-                        <p className="text-slate-400 text-sm">Force 7-day mastery streaks. Max 3 sections per day. New modules unlock daily.</p>
+                        <p className="text-slate-400 text-sm">Force 7-day mastery streaks. Max 3 sections per day. Data streams live from Google Sheets.</p>
                     </div>
 
                     <div className="space-y-4">
@@ -265,14 +278,13 @@
             );
         };
 
-        const Workspace = ({ categoryKey, moduleKey, studyState, handleCompletion }) => {
+        const Workspace = ({ DATABASE, categoryKey, moduleKey, studyState, handleCompletion }) => {
             const data = DATABASE[categoryKey].modules[moduleKey];
             const moduleId = `${categoryKey}|${moduleKey}`;
             
             const [isLogging, setIsLogging] = useState(false);
             const [logStatus, setLogStatus] = useState(null);
 
-            // PROGRESSION STATE
             const [targetIdx, setTargetIdx] = useState(0);
             const [playCount, setPlayCount] = useState(0);
 
@@ -293,30 +305,24 @@
             };
 
             const handleVerifyAndLog = async () => {
-                const isDefaultUrl = WEB_APP_URL === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
-                
                 setIsLogging(true);
-                setLogStatus(isDefaultUrl ? "Saving progress locally..." : "Syncing to database...");
+                setLogStatus("Writing telemetry to Google Sheets...");
                 
-                if (!isDefaultUrl) {
-                    try {
-                        await fetch(WEB_APP_URL, {
-                            method: 'POST',
-                            body: JSON.stringify({ topic: data.title }),
-                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                        });
-                        setLogStatus(`Success! Streak increased. Section locked for today.`);
-                    } catch (error) {
-                        console.error("Logging error:", error);
-                        setLogStatus("Error syncing to cloud, but local streak updated.");
-                    }
-                } else {
-                    // FIXED: Replaced the blocking alert with a graceful bypass so you can actually progress.
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    setLogStatus("Local streak updated. (Add Apps Script URL to sync to cloud)");
+                try {
+                    // Send progress to Tab 3
+                    await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ moduleId: moduleId }),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    });
+                    
+                    handleCompletion(categoryKey, moduleKey);
+                    setLogStatus(`Success! Progress written to Database.`);
+                } catch (error) {
+                    console.error("Logging error:", error);
+                    setLogStatus("Error syncing to cloud, but local streak updated.");
+                    handleCompletion(categoryKey, moduleKey); 
                 }
-                
-                handleCompletion(categoryKey, moduleKey);
                 setIsLogging(false);
             };
 
@@ -333,7 +339,6 @@
                     </div>
 
                     <div className="space-y-12">
-                        {/* Display sequential progression: only render up to the target index */}
                         {data.cards.slice(0, targetIdx + 1).map((card, index) => {
                             const isActiveTarget = index === targetIdx;
                             return (
@@ -431,7 +436,6 @@
                         window.speechSynthesis.speak(utterance);
                     });
                     
-                    // Trigger the requirement log when they play the full sequence
                     if (onPlayFull) {
                         onPlayFull();
                     }
@@ -460,8 +464,8 @@
                             {isActiveTarget && (
                                 <div className="bg-slate-900 rounded-lg p-3 border border-cyan-800/50">
                                     <div className="flex justify-between text-xs font-bold text-cyan-400 mb-1 tracking-wider">
-                                        <span>AUDIO REPETITIONS REQUIRED</span>
-                                        <span>{playCount} / 10</span>
+                                        <span>AUDIO REPETITIONS (MIN 10 REQUIRED)</span>
+                                        <span>{playCount} Playbacks</span>
                                     </div>
                                     <div className="w-full bg-slate-800 rounded-full h-2">
                                         <div className="bg-cyan-500 h-2 rounded-full transition-all duration-300" style={{ width: `${Math.min((playCount / 10) * 100, 100)}%` }}></div>
