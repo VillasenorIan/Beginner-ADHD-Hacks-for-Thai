@@ -53,19 +53,14 @@
 
             // Boot Sequence: Fetch Data from Sheets
             useEffect(() => {
-                if (WEB_APP_URL === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") {
-                    setFetchError("API OFFLINE: Insert your Apps Script URL at Line 28.");
-                    setIsLoading(false);
-                    return;
-                }
-
                 fetch(WEB_APP_URL)
                     .then(res => res.json())
                     .then(data => {
                         setDatabase(data);
                         
                         let allModules = [];
-                        Object.keys(data).forEach(cat => {
+                        // Ensure allModules array aligns predictably as well
+                        Object.keys(data).sort().forEach(cat => {
                             Object.keys(data[cat].modules).forEach(mod => {
                                 allModules.push(`${cat}|${mod}`);
                             });
@@ -216,7 +211,10 @@
                     </div>
 
                     <div className="space-y-4">
-                        {Object.entries(DATABASE).map(([catKey, category]) => {
+                        {/* THIS IS THE FIX: Hard sorting the keys before rendering */}
+                        {Object.entries(DATABASE)
+                            .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+                            .map(([catKey, category]) => {
                             const isExpanded = expanded[catKey];
                             return (
                                 <div key={catKey} className="border border-slate-700 rounded bg-slate-800/50 overflow-hidden">
@@ -309,7 +307,6 @@
                 setLogStatus("Writing telemetry to Google Sheets...");
                 
                 try {
-                    // Send progress to Tab 3
                     await fetch(WEB_APP_URL, {
                         method: 'POST',
                         body: JSON.stringify({ moduleId: moduleId }),
